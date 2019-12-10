@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ecd4a069-df51-47c2-8ce1-a954cbae0338" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="f27116af-9005-4037-b905-6010b3da0780" >
+		<vm:connection />
+		<vm:queues >
+			<vm:queue queueName="test" queueType="PERSISTENT" />
+		</vm:queues>
+	</vm:config>
+	<flow name="vmdemoFlow2" doc:id="74b48b0c-2d77-4a73-b347-bdfcdbf6fcf3" >
+		<http:listener doc:name="Listener" doc:id="c84e41ba-8327-4d4d-8f79-e2365410ce9e" config-ref="HTTP_Listener_config" path="vmpublish"/>
+		<set-variable value="black" doc:name="Set Variable" doc:id="6433a21d-ea42-48e3-b98a-ccc29dc4d804" variableName="color"/>
+		<ee:transform doc:name="Transform Message" doc:id="c8df04a0-2e66-4ff4-9fe1-8073113d0b37">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Color : vars.color
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="6ba3caee-c008-475d-9141-d489027fb872" message="****Before VM**** #[payload]" />
+		<vm:publish-consume queueName="test" doc:name="Publish consume" doc:id="d1160e2a-041e-4719-8c89-b2a05cd41b07" config-ref="VM_Config"/>
+	</flow>
+	<flow name="vmdemoFlow" doc:id="a7ed4a98-24e8-436c-bd86-c6a5524399ba" >
+		<vm:listener doc:name="Listener" doc:id="1ea89932-6266-4539-95a8-87bf8abcacb9" config-ref="VM_Config" queueName="test"/>
+		<logger level="INFO" doc:name="Logger" doc:id="508e4179-1f56-4aba-84e3-0c5af6632a68" message="***After VM*** #[payload]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9e740d2d-9833-441a-8fbe-ccdf3f465135" message="***After VM*** #[vars.name]"/>
+		<ee:transform doc:name="Transform Message" doc:id="50ee4eea-6323-4c3d-a954-ff8ef88d5660" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'position' : 'developer',
+	data : payload
+	
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="c034cdd6-dd8d-4186-849c-cae2aef9a3e2" message="#[payload]"/>
+	</flow>
+</mule>
